@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from llm import ask_ollama
 from db import run_sql_query
 from prompt_templates import SQL_PROMPT_TEMPLATE, RESPONSE_PROMPT_TEMPLATE
@@ -9,6 +11,20 @@ import json
 engine = create_engine("sqlite:///mobility.db")
 
 app = FastAPI()
+
+# Allow all origins for testing purposes (or specify your frontend origin URL)
+origins = [
+    "http://localhost",  # Nginx frontend (you can also add other URLs if needed)
+    "http://localhost:80",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Allow requests from your frontend
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
 
 TABLE_SCHEMA = """
 Table: vehicles
@@ -25,6 +41,13 @@ Table: trips
 - end_time (datetime)
 - distance_km (float)
 """
+
+
+# Favicon route (optional)
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse("favicon.ico")  # Replace with the correct favicon path if you have one
+
 
 @app.post("/query")
 async def query_nl(request: Request):
